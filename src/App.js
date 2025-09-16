@@ -15,22 +15,32 @@ const ProductList = ({ products, onQuantityChange }) => {
               <img 
                 src={product.image} 
                 alt={product.desc}
-                className="me-3"
-                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                className="me-3 product-image"
               />
-              <div>
+              <div className="flex-grow-1">
                 <h5 className="mb-1">{product.desc}</h5>
-                <div className="d-flex align-items-center">
-                  <input
-                    type="number"
-                    min="0"
-                    value={product.value}
-                    onChange={(e) => onQuantityChange(index, parseInt(e.target.value) || 0)}
-                    className="form-control me-2"
-                    style={{ width: '80px' }}
-                  />
-                  <span>quantity</span>
-                </div>
+              </div>
+              <div className="quantity-controls">
+                <span className="me-2">Quantity</span>
+                <button 
+                  className="btn btn-outline-secondary btn-sm me-1"
+                  onClick={() => onQuantityChange(index, Math.max(0, product.value - 1))}
+                >
+                  -
+                </button>
+                <input
+                  type="number"
+                  min="0"
+                  value={product.value}
+                  onChange={(e) => onQuantityChange(index, parseInt(e.target.value) || 0)}
+                  className="form-control quantity-input text-center"
+                />
+                <button 
+                  className="btn btn-outline-secondary btn-sm ms-1"
+                  onClick={() => onQuantityChange(index, product.value + 1)}
+                >
+                  +
+                </button>
               </div>
             </div>
           </div>
@@ -47,7 +57,11 @@ const Header = ({ totalItems }) => {
       <div className="container">
         <div className="row align-items-center">
           <div className="col">
-            <h2 className="mb-0">Shop to React</h2>
+            <h2 className="mb-0 d-flex align-items-center">
+              Shop 2 
+              <span className="react-logo ms-2">R</span>
+              eact
+            </h2>
           </div>
           <div className="col-auto">
             <FontAwesomeIcon icon={faShoppingCart} className="me-2" />
@@ -68,17 +82,17 @@ class App extends Component {
         {
           image: './products/cologne.jpg',
           desc: 'Unisex Cologne',
-          value: 0
+          value: 2
         },
         {
           image: './products/iwatch.jpg',
           desc: 'Apple iWatch',
-          value: 0
+          value: 1
         },
         {
           image: './products/mug.jpg',
           desc: 'Unique Mug',
-          value: 0
+          value: 3
         },
         {
           image: './products/wallet.jpg',
