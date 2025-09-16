@@ -1,11 +1,39 @@
 import React, { Component } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { faShoppingCart } from "@fortawesome/free-solid-svg-icons";
+import { faShoppingCart, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import "./App.css";
 
+// Product Modal Component (Functional Component)
+const ProductModal = ({ product, isOpen, onClose }) => {
+  if (!isOpen || !product) return null;
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h5 className="modal-title">{product.desc}</h5>
+          <button className="close-btn" onClick={onClose}>
+            <FontAwesomeIcon icon={faTimes} />
+          </button>
+        </div>
+        <div className="modal-body">
+          <img 
+            src={product.image} 
+            alt={product.desc}
+            className="modal-product-image"
+          />
+          <div className="modal-rating">
+            <span>Ratings: {product.rating || '3.5'}/5</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Product List Component (Functional Component)
-const ProductList = ({ products, onQuantityChange }) => {
+const ProductList = ({ products, onQuantityChange, onProductClick }) => {
   return (
     <div className="container mt-4">
       {products.map((product, index) => (
@@ -15,10 +43,11 @@ const ProductList = ({ products, onQuantityChange }) => {
               <img 
                 src={product.image} 
                 alt={product.desc}
-                className="me-3 product-image"
+                className="me-3 product-image clickable"
+                onClick={() => onProductClick(product)}
               />
               <div className="flex-grow-1">
-                <h5 className="mb-1">{product.desc}</h5>
+                <h5 className="mb-1 clickable" onClick={() => onProductClick(product)}>{product.desc}</h5>
               </div>
               <div className="quantity-controls">
                 <span className="me-2">Quantity</span>
@@ -82,24 +111,30 @@ class App extends Component {
         {
           image: './products/cologne.jpg',
           desc: 'Unisex Cologne',
-          value: 2
+          value: 2,
+          rating: '4.2'
         },
         {
           image: './products/iwatch.jpg',
           desc: 'Apple iWatch',
-          value: 1
+          value: 1,
+          rating: '3.5'
         },
         {
           image: './products/mug.jpg',
           desc: 'Unique Mug',
-          value: 3
+          value: 3,
+          rating: '4.8'
         },
         {
           image: './products/wallet.jpg',
           desc: 'Mens Wallet',
-          value: 0
+          value: 0,
+          rating: '4.0'
         }
-      ]
+      ],
+      selectedProduct: null,
+      isModalOpen: false
     };
   }
 
@@ -115,6 +150,20 @@ class App extends Component {
     return this.state.products.reduce((total, product) => total + product.value, 0);
   };
 
+  handleProductClick = (product) => {
+    this.setState({
+      selectedProduct: product,
+      isModalOpen: true
+    });
+  };
+
+  handleCloseModal = () => {
+    this.setState({
+      selectedProduct: null,
+      isModalOpen: false
+    });
+  };
+
   render() {
     return (
       <div className="App">
@@ -122,6 +171,12 @@ class App extends Component {
         <ProductList 
           products={this.state.products} 
           onQuantityChange={this.handleQuantityChange}
+          onProductClick={this.handleProductClick}
+        />
+        <ProductModal 
+          product={this.state.selectedProduct}
+          isOpen={this.state.isModalOpen}
+          onClose={this.handleCloseModal}
         />
       </div>
     );
