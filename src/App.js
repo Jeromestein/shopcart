@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { faShoppingCart, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -75,6 +75,209 @@ const ProductList = ({ products, onQuantityChange, onProductClick }) => {
           </div>
         </div>
       ))}
+    </div>
+  );
+};
+
+// SignIn Component (Functional Component)
+const SignIn = ({ onLoginSuccess, onBackToCart }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: ''
+  });
+  const [login, setLogin] = useState(false);
+  const [data, setData] = useState({});
+  const [picture, setPicture] = useState('');
+
+  // Load Facebook SDK
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://connect.facebook.net/en_US/sdk.js';
+    script.async = true;
+    script.defer = true;
+    script.crossOrigin = 'anonymous';
+    document.body.appendChild(script);
+
+    script.onload = () => {
+      if (window.FB) {
+        window.FB.init({
+          appId: process.env.REACT_APP_FACEBOOK_APP_ID || 'your-facebook-app-id', // You need to set this in your .env file
+          cookie: true,
+          xfbml: true,
+          version: 'v18.0'
+        });
+      }
+    };
+
+    return () => {
+      // Cleanup
+      const existingScript = document.querySelector('script[src="https://connect.facebook.net/en_US/sdk.js"]');
+      if (existingScript) {
+        document.body.removeChild(existingScript);
+      }
+    };
+  }, []);
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle form submission
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    console.log('Form submitted:', formData);
+    alert(`Welcome ${formData.name}!`);
+    onLoginSuccess({ name: formData.name, email: formData.email });
+  };
+
+  // Handle Facebook login
+  const handleFacebookLogin = () => {
+    if (window.FB) {
+      // Check if user is already logged in
+      window.FB.getLoginStatus((response) => {
+        if (response.status === 'connected') {
+          // User is already logged in
+          console.log('User already logged in:', response);
+          setLogin(true);
+          setData(response);
+          getUserInfo();
+        } else {
+          // User needs to log in
+          window.FB.login((loginResponse) => {
+            if (loginResponse.authResponse) {
+              console.log('Facebook login success:', loginResponse);
+              setLogin(true);
+              setData(loginResponse);
+              getUserInfo();
+            } else {
+              console.log('Facebook login cancelled or failed');
+              alert('Facebook login cancelled or failed, please try again');
+            }
+          }, { 
+            scope: 'email,public_profile',
+            return_scopes: true
+          });
+        }
+      });
+    } else {
+      alert('Facebook SDK is not loaded, please refresh the page and try again');
+    }
+  };
+
+  // Get user information from Facebook
+  const getUserInfo = () => {
+    window.FB.api('/me', { fields: 'name,picture,email' }, (userInfo) => {
+      console.log('User info:', userInfo);
+      setData(prev => ({
+        ...prev,
+        name: userInfo.name,
+        email: userInfo.email,
+        picture: userInfo.picture?.data?.url
+      }));
+      if (userInfo.picture?.data?.url) {
+        setPicture(userInfo.picture.data.url);
+      }
+      // Call login success callback
+      onLoginSuccess({
+        name: userInfo.name,
+        email: userInfo.email,
+        picture: userInfo.picture?.data?.url
+      });
+    });
+  };
+
+  // Handle Facebook logout
+  const handleFacebookLogout = () => {
+    if (window.FB) {
+      window.FB.logout((response) => {
+        console.log('Facebook logout:', response);
+        setLogin(false);
+        setData({});
+        setPicture('');
+        alert('Logout successfully');
+      });
+    }
+  };
+
+  return (
+    <div className="signin-container">
+      <div className="signin-card">
+        <h1 className="signin-title">Sign In</h1>
+        <p className="signin-description">Please login using one of the following:</p>
+        
+        {/* Traditional Form Login */}
+        <div className="form-section">
+          <form onSubmit={handleFormSubmit} className="login-form">
+            <div className="form-group">
+              <label htmlFor="name">Name:</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Your name"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="email">Email:</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="Your Email"
+                required
+              />
+            </div>
+            <button type="submit" className="login-button">
+              Login
+            </button>
+          </form>
+        </div>
+
+        {/* Facebook Login Button */}
+        <div className="facebook-section">
+          <button 
+            className="facebook-login-button"
+            onClick={handleFacebookLogin}
+          >
+            LOGIN WITH FACEBOOK
+          </button>
+        </div>
+
+        {/* Back to Cart Button */}
+        <div className="back-section">
+          <button 
+            className="back-button"
+            onClick={onBackToCart}
+          >
+            Back to Cart
+          </button>
+        </div>
+
+        {/* Display login success info */}
+        {login && (
+          <div className="success-info">
+            <h3>Welcome {data.name}!</h3>
+            {picture && <img src={picture} alt="Profile" className="profile-picture" />}
+            {data.email && <p>Email: {data.email}</p>}
+            <button 
+              className="logout-button"
+              onClick={handleFacebookLogout}
+            >
+              Logout Facebook
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -179,7 +382,10 @@ class App extends Component {
         }
       ],
       selectedProduct: null,
-      isModalOpen: false
+      isModalOpen: false,
+      showSignIn: false,
+      isLoggedIn: false,
+      userInfo: null
     };
   }
 
@@ -216,12 +422,26 @@ class App extends Component {
       return;
     }
     
+    // 跳转到登录页面
+    this.setState({
+      showSignIn: true
+    });
+  };
+
+  handleLoginSuccess = (userInfo) => {
+    this.setState({
+      isLoggedIn: true,
+      userInfo: userInfo,
+      showSignIn: false
+    });
+    
     // 显示结账信息
+    const cartItems = this.state.products.filter(product => product.value > 0);
     const checkoutMessage = cartItems.map(item => 
       `${item.desc} x ${item.value}`
     ).join('\n');
     
-    alert(`Checkout Summary:\n${checkoutMessage}\n\nTotal Items: ${this.getTotalItems()}`);
+    alert(`Welcome ${userInfo.name}!\n\nCheckout Summary:\n${checkoutMessage}\n\nTotal Items: ${this.getTotalItems()}`);
     
     // 清空购物车
     this.setState(prevState => ({
@@ -229,7 +449,25 @@ class App extends Component {
     }));
   };
 
+  handleBackToCart = () => {
+    this.setState({
+      showSignIn: false
+    });
+  };
+
   render() {
+    // 如果显示登录页面
+    if (this.state.showSignIn) {
+      return (
+        <div className="App">
+          <SignIn 
+            onLoginSuccess={this.handleLoginSuccess}
+            onBackToCart={this.handleBackToCart}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className="App">
         <Header totalItems={this.getTotalItems()} />
