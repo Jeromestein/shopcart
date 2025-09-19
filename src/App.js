@@ -79,6 +79,51 @@ const ProductList = ({ products, onQuantityChange, onProductClick }) => {
   );
 };
 
+// Cart Component (Functional Component)
+const Cart = ({ products, onCheckout }) => {
+  const cartItems = products.filter(product => product.value > 0);
+  
+  if (cartItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="container mt-4">
+      <div className="row">
+        <div className="col-md-8">
+          <h3 className="mb-3">Your Cart Items</h3>
+          {cartItems.map((product, index) => (
+            <div key={index} className="card mb-3">
+              <div className="card-body">
+                <div className="row align-items-center">
+                  <div className="col-md-3">
+                    <img 
+                      src={product.image} 
+                      alt={product.desc}
+                      className="img-fluid"
+                      style={{ maxHeight: '100px', objectFit: 'cover' }}
+                    />
+                  </div>
+                  <div className="col-md-6">
+                    <h5 className="card-title">{product.desc}</h5>
+                    <p className="card-text">Quantity: {product.value}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <button 
+            className="btn btn-primary btn-lg"
+            onClick={onCheckout}
+          >
+            Check Out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Header Component (Functional Component)
 const Header = ({ totalItems }) => {
   return (
@@ -164,6 +209,26 @@ class App extends Component {
     });
   };
 
+  handleCheckout = () => {
+    const cartItems = this.state.products.filter(product => product.value > 0);
+    if (cartItems.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+    
+    // 显示结账信息
+    const checkoutMessage = cartItems.map(item => 
+      `${item.desc} x ${item.value}`
+    ).join('\n');
+    
+    alert(`Checkout Summary:\n${checkoutMessage}\n\nTotal Items: ${this.getTotalItems()}`);
+    
+    // 清空购物车
+    this.setState(prevState => ({
+      products: prevState.products.map(product => ({ ...product, value: 0 }))
+    }));
+  };
+
   render() {
     return (
       <div className="App">
@@ -172,6 +237,10 @@ class App extends Component {
           products={this.state.products} 
           onQuantityChange={this.handleQuantityChange}
           onProductClick={this.handleProductClick}
+        />
+        <Cart 
+          products={this.state.products}
+          onCheckout={this.handleCheckout}
         />
         <ProductModal 
           product={this.state.selectedProduct}
